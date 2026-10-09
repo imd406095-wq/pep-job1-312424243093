@@ -18,17 +18,11 @@ resource "local_file" "tf_file" {
 }
 
 
-# VPC & security Group
-
-resource "aws_default_vpc" "default" {
-  
-}
-
 #Security Group
 resource "aws_security_group" "my_security" {
   name = "automate-sg"
   description = "This will add a TF generate security Group"
-  vpc_id = aws_default_vpc.default.id #interpolation
+  vpc_id = aws_vpc.demovpc.id #interpolation
 
   #Inbound Rules
   ingress {
@@ -65,9 +59,12 @@ resource "aws_security_group" "my_security" {
 
 resource "aws_instance" "my_instance" {
   key_name = aws_key_pair.my_key.key_name 
-  security_groups = [aws_security_group.my_security.name]
+  vpc_security_group_ids = [aws_security_group.my_security.id]
   instance_type = var.ec2_instance_type #Interpolation
   ami = var.ec2_ami_id #AWS Linux
+
+  subnet_id = aws_subnet.pub-sub.id
+  associate_public_ip_address = true
   user_data = <<-EOF
               #!/bin/bash
               sudo apt-get update -y
@@ -77,6 +74,7 @@ resource "aws_instance" "my_instance" {
               sudo usermod -aG docker $USER
               newgrp docker
               EOF
+  
 
   root_block_device {
     volume_size = var.ec2_root_storage_size 
@@ -86,4 +84,8 @@ resource "aws_instance" "my_instance" {
   tags = {
     name = "SJIT-pep-cloud"
   }
+
+  depends_on = [
+    aws_route_table_association.public_association
+  ]
 }
