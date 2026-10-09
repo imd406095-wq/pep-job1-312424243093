@@ -1,7 +1,7 @@
 #Key Pair (login)
 
 resource "aws_key_pair" "my_key" {
-    key_name = "demo-key"
+    key_name = "tfkey"
     public_key = tls_private_key.rsa.public_key_openssh
   
 }
